@@ -130,3 +130,23 @@ func IsDeviceRegistered(androidID string) bool {
 	).Scan(&count)
 	return count > 0
 }
+
+// 获取已注册设备总数
+func GetDeviceCount() int {
+	var count int
+	DB.QueryRow("SELECT COUNT(*) FROM devices WHERE banned=0").Scan(&count)
+	return count
+}
+
+// 获取某设备已用存储量（字节）
+func GetDeviceUsage(androidID string) int64 {
+	var total sql.NullInt64
+	DB.QueryRow(
+		"SELECT SUM(size) FROM uploaded_files WHERE android_id=?",
+		androidID,
+	).Scan(&total)
+	if total.Valid {
+		return total.Int64
+	}
+	return 0
+}

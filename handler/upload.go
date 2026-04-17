@@ -10,6 +10,9 @@ import (
 	"backupserver/db"
 )
 
+// 每设备存储上限：10GB
+const maxStoragePerDevice int64 = 100 * 1024 * 1024 * 1024
+
 type ChunkRequest struct {
 	AndroidID  string `json:"android_id"`
 	HashKey    string `json:"hash_key"`
@@ -22,12 +25,19 @@ type ChunkRequest struct {
 
 func UploadChunk(w http.ResponseWriter, r *http.Request) {
 	var req ChunkRequest
-        if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-                http.Error(w, "Bad request", http.StatusBadRequest)
-                return
-        }
+	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
+		http.Error(w, "Bad request", http.StatusBadRequest)
+		return
+	}
 	if !safeID.MatchString(req.AndroidID) {
 		http.Error(w, "Invalid android_id", http.StatusBadRequest)
+		return
+	}
+
+	// 检查存储配额
+	usage := db.GetDeviceUsage(req.AndroidID)
+	if usage >= maxStoragePerDevice {
+		http.Error(w, "Storage quota exceeded", http.StatusForbidden)
 		return
 	}
 

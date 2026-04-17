@@ -23,7 +23,7 @@ func main() {
 
 	r := mux.NewRouter()
 	api := r.PathPrefix("/api").Subrouter()
-	api.Use(auth.HMACMiddleware)
+	api.Use(auth.RSAAuthMiddleware)
 
 	api.HandleFunc("/register",        handler.RegisterDevice).Methods("POST")
 	api.HandleFunc("/init",            handler.InitUser).Methods("POST")
